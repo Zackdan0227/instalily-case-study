@@ -1,0 +1,8 @@
+flask
+flask-cors
+python-dotenv
+openai
+requests
+langchain>=0.0.100
+langchain-community
+chromadb
