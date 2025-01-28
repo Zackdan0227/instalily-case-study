@@ -44,3 +44,5 @@ instance/
 *.pyc
 
 .envrc
+
+chroma_persist_dir/

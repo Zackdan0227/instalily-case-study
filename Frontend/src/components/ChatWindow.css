@@ -10,9 +10,10 @@
   padding-bottom: 2px;
   font-size: 16px;
   margin-top: 60px; 
-  margin-bottom: 70px; 
+  margin-bottom: 70px;
 }
 
+/* USER & ASSISTANT MESSAGES */
 .user-message-container,
 .assistant-message-container {
   display: flex;
@@ -33,15 +34,15 @@
 .message {
   white-space: pre-line;
   padding: 14px;
-  margin: 2px 0;
+  margin: 4px 0;
   border-radius: 10px;
-  clear: both;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
   text-align: left;
 }
 
+/* USER MESSAGE STYLING */
 .user-message {
   align-self: flex-end;
   font-size: 13px;
@@ -51,6 +52,7 @@
   text-align: left;
 }
 
+/* ASSISTANT MESSAGE STYLING */
 .assistant-message {
   align-self: flex-start;
   background-color: #f6f6f6;
@@ -58,14 +60,61 @@
   color: #000000;
   padding: 14px;
   font-size: 13px;
-  width: 100%;
+  width: fit-content;
+  max-width: 80%;
   box-sizing: border-box;
 }
 
-::-webkit-scrollbar {
-  display: none;
+/* HIGHLIGHT CLARIFYING QUESTIONS */
+.clarifying-question {
+  background-color: #fff8dc; /* Light Yellow */
+  border-left: 5px solid #ffcc00; /* Yellow Border */
+  padding: 14px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #000000;
 }
 
+/* TYPING INDICATOR (LOADING DOTS) */
+.typing-indicator {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background-color: #555;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* KEYFRAMES FOR TYPING DOTS */
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  } 
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* INPUT AREA */
 .input-area {
   font-size: 15px;
   padding: 10px;
@@ -76,19 +125,6 @@
   background: #fff;
   position: fixed;
   width: calc(100% - 40px);
-}
-
-.input-area textarea {
-  font-size: 15px;
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  resize: none;
-  overflow-y: auto;
-  min-height: 200px;
-  max-height: 200px;
-  margin-right: 10px;
 }
 
 .input-area input {
@@ -108,4 +144,14 @@
   color: white;
   cursor: pointer;
   font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.input-area button:hover {
+  background-color: #333;
+}
+
+.input-area button:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
 }
