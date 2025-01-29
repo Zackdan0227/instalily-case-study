@@ -121,3 +121,47 @@ graph TD
   - `OPENAI_API_KEY`
   - `GOOGLE_API_KEY`
   - `GOOGLE_CSE_ID
+
+## Local Development
+
+### Backend Setup
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-repo/partselect-appliance-assistant.git
+   cd partselect-appliance-assistant/backend
+   ```
+2. Create a virtual environment:
+   ```sh
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+4. Set up environment variables:
+   ```sh
+   export OPENAI_API_KEY=your-api-key
+   export GOOGLE_API_KEY=your-google-api-key
+   export GOOGLE_CSE_ID=your-cse-id
+   ```
+5. Start the Flask server:
+   ```sh
+   flask run
+   ```
+
+### Frontend Setup
+1. Navigate to the frontend directory:
+   ```sh
+   cd ../frontend
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the development server:
+   ```sh
+   npm start
+   ```
+
+The application should now be running locally, with the frontend accessible at `http://localhost:3000` and the backend at `http://localhost:5000`.
