@@ -196,8 +196,16 @@ class AgentManager:
             intent = self.detect_intent(query)
             logger.info(f"🎯 Detected intent: {intent}")
 
+            # Extract model number and brand for all intents
+            model_number = self.extract_model_number(query)
+            brand = None
+            if not model_number:
+                brand = self.extract_brand(query)
+            logger.info(f"🔎 Model number detected: {model_number}")
+            logger.info(f"🏢 Brand detected: {brand}")
+
             if intent == "troubleshoot":
-                # Handle troubleshooting intent with symptom scraper
+                # Extract symptom
                 symptom = self.extract_symptom(query)
                 logger.info(f"🔍 Extracted symptom: {symptom}")
                 
@@ -205,8 +213,9 @@ class AgentManager:
                     logger.warning("❌ No symptom extracted from query")
                     return {"response": "❌ Could not identify a symptom in your query. Please describe the issue you're experiencing.", "status": "error"}
 
-                # Search for symptom pages
-                search_results = google_partselect_search(symptom, num_results=5)
+                # Search with model/brand included
+                search_query = f"{symptom} {model_number if model_number else brand if brand else ''}"
+                search_results = google_partselect_search(search_query, num_results=5)
                 symptom_pages = [link for _, link in search_results if "Symptoms" in link]
                 logger.info(f"🔍 Found {len(symptom_pages)} symptom pages")
 
@@ -214,18 +223,24 @@ class AgentManager:
                     logger.warning(f"No symptom pages found for symptom: {symptom}")
                     return {"response": "❌ Could not find relevant symptom information on PartSelect.", "status": "error"}
 
-                # Use symptom scraper for troubleshooting
-                #Using the first symptom page, seems to be the most relevant, can be improved
+                # Scrape first symptom page
                 first_symptom_page = symptom_pages[0]
                 logger.info(f"🌐 Scraping symptom page: {first_symptom_page}")
                 scraped_data = scrape_symptom_page(first_symptom_page, headless=False)
                 logger.info(f"📄 Raw scraped data received")
-                
+
+                # Index the scraped data
+                if scraped_data:
+                    index_status = index_scraped_data(json.dumps(scraped_data))
+                    logger.info(f"Indexed new scraped data: {index_status}")
+
+                    # Now perform semantic search
+                    vector_results = semantic_search_with_intent(query, intent, model_number)
+                    logger.info(f"Vector search completed with {len(vector_results) if isinstance(vector_results, list) else 0} results")
+
                 # Format the scraped data for the LLM
                 if scraped_data and 'common_parts' in scraped_data and scraped_data['common_parts']:
-                    common_parts = scraped_data['common_parts'][0]  # Get the first common part
-                    
-                    # Extract only the most relevant user stories (limit to 3)
+                    common_parts = scraped_data['common_parts'][0]
                     user_stories = common_parts.get('user_stories', [])[:3]
                     formatted_stories = []
                     for story in user_stories:
@@ -234,7 +249,6 @@ class AgentManager:
                             "instruction": story.get('instruction', '')
                         })
                     
-                    # Create a more concise formatted data structure
                     formatted_data = {
                         "symptom": symptom,
                         "description": common_parts.get('description', ''),
@@ -243,9 +257,6 @@ class AgentManager:
                         "user_stories": formatted_stories
                     }
                     
-                    logger.info(f"🔄 Formatted data for LLM: {json.dumps(formatted_data, indent=2)}")
-                    
-                    # Updated system prompt for troubleshooting
                     messages = [
                         SystemMessage(content=(
                             "You are a helpful appliance repair assistant. Create a concise but detailed response using the provided information. "
@@ -277,15 +288,10 @@ class AgentManager:
                         logger.info("🤖 Generating response using LLM")
                         response = self.llm.invoke(messages)
                         logger.info("✅ LLM response generated successfully")
-                        logger.debug(f"LLM Response content: {response.content}")
                         
-                        # Log the thought process and response separately
                         response_content = response.content
                         if "🤔 Thought Process:" in response_content and "📝 Response:" in response_content:
-                            thought_process = response_content.split("📝 Response:")[0].replace("🤔 Thought Process:", "").strip()
                             final_response = response_content.split("📝 Response:")[1].strip()
-                            logger.info(f"🤔 Agent Thought Process: {thought_process}")
-                            logger.info(f"📝 Final Response: {final_response}")
                             return {
                                 "response": final_response,
                                 "status": "success"
@@ -295,7 +301,6 @@ class AgentManager:
                                 "response": response_content,
                                 "status": "success"
                             }
-                        
                     except Exception as e:
                         logger.exception(f"❌ Error generating response: {e}")
                         return {
@@ -316,7 +321,7 @@ class AgentManager:
                         "response": "❌ Could not identify a part number in your query. Please provide the part number you want to install.",
                         "status": "error"
                     }
-                
+
                 # Find product URL
                 product_url = self.find_product_url_by_part(part_number)
                 logger.info(f"🌐 Product URL found: {product_url}")
@@ -326,19 +331,27 @@ class AgentManager:
                         "response": f"❌ Could not find information for part number {part_number}.",
                         "status": "error"
                     }
-                
+
                 # Scrape installation data
                 logger.info(f"🌐 Scraping product page: {product_url}")
                 scraped_data = scrape_partselect(product_url, headless=False)
                 logger.info(f"📄 Scraped data received: {bool(scraped_data)}")
-                
+
+                # Index the scraped data
+                if scraped_data:
+                    index_status = index_scraped_data(json.dumps(scraped_data))
+                    logger.info(f"Indexed new scraped data: {index_status}")
+
+                    # Now perform semantic search
+                    vector_results = semantic_search_with_intent(query, intent, model_number)
+                    logger.info(f"Vector search completed with {len(vector_results) if isinstance(vector_results, list) else 0} results")
+
                 if not scraped_data:
                     return {
                         "response": "❌ Could not retrieve installation information.",
                         "status": "error"
                     }
-                
-                # Updated system prompt for better formatting
+
                 messages = [
                     SystemMessage(content=(
                         "You are a helpful appliance repair assistant. Create a concise but detailed response using the provided information. "
@@ -378,16 +391,13 @@ class AgentManager:
                 }
 
             elif intent == "compatibility":
-                # Extract both model number and part number
-                model_number = self.extract_model_number(query)
+                # Extract part number (model number already extracted)
                 part_number = self.extract_part_number(query)
-                
-                logger.info(f"🔎 Model number detected: {model_number}")
                 logger.info(f"🔎 Part number detected: {part_number}")
                 
-                if not model_number:
+                if not model_number and not brand:
                     return {
-                        "response": "❌ Could not identify a model number in your query. Please provide your appliance's model number.",
+                        "response": "❌ Could not identify a model number or brand in your query. Please provide your appliance's model number or brand.",
                         "status": "error"
                     }
                 
@@ -396,7 +406,7 @@ class AgentManager:
                         "response": "❌ Could not identify a part number in your query. Please provide the part number you want to check.",
                         "status": "error"
                     }
-                
+
                 # Find product URL for the model
                 product_url = self.find_product_url_by_model(model_number)
                 if not product_url:
@@ -404,11 +414,19 @@ class AgentManager:
                         "response": f"❌ Could not find information for model number {model_number}.",
                         "status": "error"
                     }
-                
+
                 # Scrape compatibility data
                 scraped_data = scrape_partselect(product_url, headless=False)
-                
-                # Updated system prompt for better formatting
+
+                # Index the scraped data
+                if scraped_data:
+                    index_status = index_scraped_data(json.dumps(scraped_data))
+                    logger.info(f"Indexed new scraped data: {index_status}")
+
+                    # Now perform semantic search
+                    vector_results = semantic_search_with_intent(query, intent, model_number)
+                    logger.info(f"Vector search completed with {len(vector_results) if isinstance(vector_results, list) else 0} results")
+
                 messages = [
                     SystemMessage(content=(
                         "You are a helpful appliance repair assistant. Create a concise response about part compatibility. "
@@ -486,6 +504,22 @@ class AgentManager:
         except Exception as e:
             logger.exception(f"🚨 Error during scraping and processing: {e}")
             return {}
+
+    def extract_brand(self, query: str) -> str:
+        """
+        Extracts brand name from the query using GPT.
+        """
+        messages = [
+            SystemMessage(content="Extract the appliance brand name from the query. Return only the brand name or 'None' if not found."),
+            HumanMessage(content=query)
+        ]
+        try:
+            response = self.llm.invoke(messages)
+            brand = response.content.strip()
+            return None if brand.lower() == 'none' else brand
+        except Exception as e:
+            logger.exception(f"❌ Error extracting brand: {e}")
+            return None
 
 
 # Instantiate Agent Manager
