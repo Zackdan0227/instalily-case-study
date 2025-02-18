@@ -215,6 +215,7 @@ class AgentManager:
                     return {"response": "❌ Could not find relevant symptom information on PartSelect.", "status": "error"}
 
                 # Use symptom scraper for troubleshooting
+                #Using the first symptom page, seems to be the most relevant, can be improved
                 first_symptom_page = symptom_pages[0]
                 logger.info(f"🌐 Scraping symptom page: {first_symptom_page}")
                 scraped_data = scrape_symptom_page(first_symptom_page, headless=False)

@@ -5,14 +5,14 @@ import uuid
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from agents import plan_and_execute_agent  # Ensure agents.py is updated to handle sessions
+from agents import plan_and_execute_agent  
 import logging
 from agent_manager import agent_manager
 
 app = Flask(__name__)
 CORS(app, resources={
     r"/chat": {
-        "origins": ["http://localhost:3000"],  # Add your frontend URL
+        "origins": ["chrome-extension://*", "http://localhost:3000"],  # Add chrome-extension
         "methods": ["POST"],
         "allow_headers": ["Content-Type"]
     }

@@ -1,14 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "Instalily Case Study",
+  "name": "PartSelect Assistant",
   "version": "1.0",
-  "description": "AI Assistant",
+  "description": "AI-powered appliance repair assistant",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "http://localhost:5001/*",
+    "https://www.partselect.com/*"
+  ],
   "side_panel": {
-    "default_path": "index.html"
+    "default_path": "sidepanel/index.html"
   },
-  "permissions": ["sidePanel", "tabs", "activeTabs", "scripting"],
-  "host_permissions": ["https://*/*", "http://*/*","http://*/*/*"],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+  "background": {
+    "service_worker": "background/background.js"
   }
 }

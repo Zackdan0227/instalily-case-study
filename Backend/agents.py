@@ -1,5 +1,5 @@
 # agents.py
-
+#playground code for testing
 import json
 import logging
 from langchain.schema import HumanMessage, SystemMessage
@@ -53,7 +53,7 @@ def format_response(data: dict, intent: str, original_query: str, session: dict)
     if "scraped_data" in data:
         scraped_data = data["scraped_data"]
 
-        # We'll build a single dict for GPT containing:
+        #build a single dict for GPT containing:
         # - The original user query
         # - The relevant instructions from user stories
         # - Possibly the part's official description
